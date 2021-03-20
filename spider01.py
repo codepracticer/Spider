@@ -6,7 +6,7 @@
 
 from bs4 import BeautifulSoup
 import re
-import urllib.request,urllib.error
+import urllib.request, urllib.error
 import xlwt
 import sqlite3
 
@@ -15,11 +15,15 @@ def main():
     baseurl = "https://movie.douban.com/top250?start="
     #1.爬取网页
     datalist = getData(baseurl)
-    print(datalist)
-    savepath = "豆瓣电影Top250.xls"
+    #print(datalist)
+    #savepath = "豆瓣电影Top250.xls"
+
     #getData(baseurl)
-    saveData(datalist,savepath)
-    askURL(baseurl)
+    #saveData(datalist,savepath)
+    #askURL(baseurl)
+
+    savepath = "movie.db"
+    saveSqlite(datalist, savepath)
 
 #匹配电影链接
 findLink = re.compile(r'<a href="(.*?)">')
@@ -37,118 +41,65 @@ findInq = re.compile(r'<span class="inq">(.*)</span>')
 findBd = re.compile(r'<p class="">(.*?)</p>',re.S)
 
 
-#这个函数只能爬25条数据，不知道问题出在哪？？？？
-#爬取网页
-# def getData(baseurl):
-#     datalist = []
-#     for i in range(0, 10):
-#         url = baseurl + str(i * 25)
-#         html = askURL(url)  #保存获取到的网页源码
-#
-#     #2.逐一解析数据
-#     soup = BeautifulSoup(html, 'html.parser')
-#     for item in soup.find_all('div', class_="item"):
-#         #print(item)
-#         data = []       #保存一部电影信息
-#         item = str(item)
-#
-#
-#         movielink = re.findall(findLink, item)[0]
-#         data.append(movielink)
-#
-#         picLink = re.findall(findImgSrc, item)[0]
-#         data.append(picLink)
-#
-#         movieName = re.findall(findName, item)   #片名可能只有一个中文名
-#         if (len(movieName) == 2):
-#             ctitle = movieName[0]
-#             data.append(ctitle)
-#             ftitle = movieName[1].replace("/", "")   #去掉无关符号
-#             data.append(ftitle)
-#         else:
-#             data.append(movieName[0])
-#             data.append(" ")      #为外文名留空留空
-#
-#
-#         rating = re.findall(findRating, item)[0]
-#         data.append(rating)
-#
-#         ratingNum = re.findall(findRatingNum, item)[0]
-#         data.append(ratingNum)
-#
-#
-#         #添加电影概况
-#         inq = re.findall(findInq, item)
-#         if len(inq) != 0:
-#             inq = inq[0].replace("。", "")  #去掉句号
-#             data.append(inq)
-#         else:
-#             data.append(" ")
-#
-#         #添加电影相关信息
-#         bd = re.findall(findBd, item)[0]
-#         bd = re.sub('<br(\s+)?/>(\s+)?', " ", bd)
-#         bd = re.sub('/', " ", bd)
-#         data.append(bd.strip())    #去掉前面空格
-#
-#
-#         datalist.append(data)
-#
-#     #print(datalist)
-#     return datalist
 
+#爬取网页
 def getData(baseurl):
     datalist = []
-    for i in range(0, 10):  # 调用获取页面信息的函数，10次
+    for i in range(0, 10):
         url = baseurl + str(i * 25)
-        html = askURL(url)  # 保存获取到的网页源码
+        html = askURL(url)  #保存获取到的网页源码
 
-        # 2.逐一解析数据
-        soup = BeautifulSoup(html, "html.parser")
-        for item in soup.find_all('div', class_="item"):  # 查找符合要求的字符串，形成列表
-            # print(item)   #测试：查看电影item全部信息
-            data = []  # 保存一部电影的所有信息
+        #2.逐一解析数据
+        soup = BeautifulSoup(html, 'html.parser')
+        for item in soup.find_all('div', class_="item"):
+            #print(item)
+            data = []       #保存一部电影信息
             item = str(item)
 
-            # 影片详情的链接
-            link = re.findall(findLink, item)[0]  # re库用来通过正则表达式查找指定的字符串
-            data.append(link)  # 添加链接
 
-            imgSrc = re.findall(findImgSrc, item)[0]
-            data.append(imgSrc)  # 添加图片
+            movielink = re.findall(findLink, item)[0]
+            data.append(movielink)
 
-            titles = re.findall(findName, item)  # 片名可能只有一个中文名，没有外国名
-            if (len(titles) == 2):
-                ctitle = titles[0]  # 添加中文名
+            picLink = re.findall(findImgSrc, item)[0]
+            data.append(picLink)
+
+            movieName = re.findall(findName, item)   #片名可能只有一个中文名
+            if (len(movieName) == 2):
+                ctitle = movieName[0]
                 data.append(ctitle)
-                otitle = titles[1].replace("/", "")  # 去掉无关的符号
-                data.append(otitle)  # 添加外国名
+                ftitle = movieName[1].replace("/", "")   #去掉无关符号
+                data.append(ftitle)
             else:
-                data.append(titles[0])
-                data.append(' ')  # 外国名字留空
+                data.append(movieName[0])
+                data.append(" ")      #为外文名留空留空
+
 
             rating = re.findall(findRating, item)[0]
-            data.append(rating)  # 添加评分
+            data.append(rating)
 
-            judgeNum = re.findall(findRatingNum, item)[0]
-            data.append(judgeNum)  # 提加评价人数
+            ratingNum = re.findall(findRatingNum, item)[0]
+            data.append(ratingNum)
 
+
+            #添加电影概况
             inq = re.findall(findInq, item)
             if len(inq) != 0:
-                inq = inq[0].replace("。", "")  # 去掉句号
-                data.append(inq)  # 添加概述
+                inq = inq[0].replace("。", "")  #去掉句号
+                data.append(inq)
             else:
-                data.append(" ")  # 留空
+                data.append(" ")
 
+            #添加电影相关信息
             bd = re.findall(findBd, item)[0]
-            bd = re.sub('<br(\s+)?/>(\s+)?', " ", bd)  # 去掉<br/>
-            bd = re.sub('/', " ", bd)  # 替换/
-            data.append(bd.strip())  # 去掉前后的空格
+            bd = re.sub('<br(\s+)?/>(\s+)?', " ", bd)
+            bd = re.sub('/', " ", bd)
+            data.append(bd.strip())    #去掉前面空格
 
-            datalist.append(data)  # 把处理好的一部电影信息放入datalist
 
+            datalist.append(data)
+
+    #print(datalist)
     return datalist
-
 
 
 #得到指定一个URL的网页内容
@@ -168,8 +119,9 @@ def askURL(url):
         if hasattr(e,"reason"):
             print(e.reason)
     return html
+
 #3.保存数据
-def saveData(datalist,savepath):
+def saveData(datalist, savepath):
     wookbook = xlwt.Workbook(encoding='utf-8',style_compression=0)
     worksheet = wookbook.add_sheet('sheet1',cell_overwrite_ok=True)
     col = ("电影链接","图片链接","电影中文名","电影外文名","评分","评分人数","电影概况","相关信息")
@@ -185,6 +137,48 @@ def saveData(datalist,savepath):
             worksheet.write(i+1,j,data[j])   #数据
 
     wookbook.save(savepath)      #保存
+
+def saveSqlite(datalist, savepath):
+    init(savepath)
+    conn = sqlite3.connect(savepath)
+    cursor = conn.cursor()
+    for i in datalist:
+        for num in range(len(i)):
+            if num == 5 or num == 4:
+                continue
+            else:
+                i[num] = '"' + i[num] + '"'
+        sql = '''
+            insert into movie (info_link, pic_link, cname, ename, score, rated, introduction, info)  
+            values(%s)'''%",".join(i)
+        print(i)
+        cursor.execute(sql)
+        conn.commit()
+    print('插入成功')
+    cursor.close()
+    conn.close()
+
+def init(savepath):
+    sql = '''
+        create table movie
+        (id integer primary key autoincrement,
+        info_link text,
+        pic_link text,
+        cname varchar,
+        ename varchar,
+        score numeric,
+        rated numeric,
+        introduction text,
+        info text
+        )
+    '''
+
+    conn = sqlite3.connect(savepath)
+    cursor = conn.cursor()
+
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
 
 
 if __name__ == '__main__':

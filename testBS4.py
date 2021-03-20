@@ -57,7 +57,7 @@ import re
 #t_list = bs.select(".div_menu")  #通过类选择器来选择
 #t_list = bs.select("#ww")    #通过id选择器来选择
 
-#t_list = bs.select("a[class='']")  #通过属性来查找
+t_list = bs.select("a[class='el']")  #通过属性来查找
 
 #t_list = bs.select("head > title")  #通过子标签来查找
 
@@ -65,5 +65,7 @@ import re
 
 
 #print(t_list[0].get_text())
+#t_list = bs.find_all('a', class_='el')
+print(t_list)
 for item in t_list:
     print(item)
